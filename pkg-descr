@@ -1,4 +1,4 @@
-This port contains a script for generating portaudit reports for jails running on a FreeBSD system.
+This port contains a script to generate portaudit reports for jails running on a FreeBSD system.
 
 Normally portaudit just creates reports for the Host-system or the jail it is installed in. With a large number of jails running on a system, installing and updating portaudit in every jail is time-consuming and error-prone. Jailaudit uses the portaudit installed in the Host-system to create a report for every jail.
 
