@@ -9,7 +9,7 @@ It can also be used to send specific report-mails to the owner of a jail by runn
 
 Sends reports-mails of the jails with the hostnames foo.example.com and bar.example.com to the mailaddr. admin@example.com.
 
-WWW: http://outpost.h3q.com/software/jailaudit/
+WWW: https://anonsvn.h3q.com/projects/jailaudit/
 
 - cryx
 Philipp Wuensche <cryx-ports@h3q.com>
