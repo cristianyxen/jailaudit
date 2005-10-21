@@ -30,14 +30,14 @@ jailnames=$3
 if [ "X${action}" != "Xmail" ] && [ "X${action}" != "Xgenerate" ]; then
     echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
     echo "        mailaddr can be \"-\" for stdout"
-    echo "        jailnames can be \"ALL\" for all audits or list of jail-hostnames"
+    echo "        jailnames can be \"ALL\" for all audits or a list of jail-hostnames"
     exit
 fi
 
 if [ "X${action}" != "Xgenerate" ] && [ ! "$jailnames" ]; then
     echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
     echo "        mailaddr can be \"-\" for stdout"
-    echo "        jailnames can be \"ALL\" for all audits or list of jail-hostnames"
+    echo "        jailnames can be \"ALL\" for all audits or a list of jail-hostnames"
     exit
 fi
 
