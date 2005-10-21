@@ -4,7 +4,7 @@
 #
 
 PORTNAME=       jailaudit
-PORTVERSION=    1.0
+PORTVERSION=    1.1
 CATEGORIES=     security
 MASTER_SITES=   http://outpost.h3q.com/software/jailaudit/
 
