@@ -9,7 +9,7 @@ CATEGORIES=     security
 MASTER_SITES=   http://outpost.h3q.com/software/jailaudit/
 
 MAINTAINER=     cryx-ports@h3q.com
-COMMENT=        Generate portaudit reports for jails from the hostsystem
+COMMENT=	Script for generating portaudit reports for jails. 
 
 USE_BZIP2=      yes
 
