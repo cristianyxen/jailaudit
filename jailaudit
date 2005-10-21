@@ -1,0 +1,119 @@
+#!/bin/sh
+# copyright Philipp Wuensche
+# License: beer ware (http://en.wikipedia.org/wiki/Beerware)
+
+if [ ! -f /usr/local/sbin/portaudit ]; then
+    echo "Error: `basename $0 ` depends on portaudit"
+    exit
+fi
+
+if [ -f /usr/local/etc/jailaudit.conf ]; then
+    . /usr/local/etc/jailaudit.conf
+fi
+
+if [ "X${audit_path}" = "X" ]; then
+    audit_path=/usr/local/jailaudit/reports
+fi
+
+if [ "X${tmp_path}" = "X" ]; then
+    tmp_path=/usr/local/jailaudit/tmp
+fi
+
+if [ "X${hostname}" = "X" ]; then
+    hostname=`/bin/hostname`
+fi
+
+action=$1
+mailaddr=$2
+jailnames=$3
+
+if [ "X${action}" != "Xmail" ] && [ "X${action}" != "Xgenerate" ]; then
+    echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
+    echo "        mailaddr can be \"-\" for stdout"
+    echo "        jailnames can be \"ALL\" for all audits or list of jail-hostnames"
+    exit
+fi
+
+if [ "X${action}" != "Xgenerate" ] && [ ! "$jailnames" ]; then
+    echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
+    echo "        mailaddr can be \"-\" for stdout"
+    echo "        jailnames can be \"ALL\" for all audits or list of jail-hostnames"
+    exit
+fi
+
+if [ "X${action}" = "Xgenerate" ]; then
+
+    echo
+    echo "Downloading a current audit database:"
+    /usr/local/sbin/portaudit -Fd
+    echo
+
+    rm -rf ${tmp_path}/*
+    rm -rf ${audit_path}/*
+    rm -f ${tmp_path}/_jailaudit_allports
+
+    for jpath in `/usr/sbin/jls |grep -v JID|awk '{print $4}'`; do
+        ls -1 $jpath/var/db/pkg/ >> ${tmp_path}/_jailaudit_allports 2> /dev/null
+    done
+
+    for portname in `cat ${tmp_path}/_jailaudit_allports|sort|uniq`; do
+        /usr/local/sbin/portaudit $portname > ${tmp_path}/_$portname 2> /dev/null
+    done
+
+    for jid in `/usr/sbin/jls |grep -v JID|awk '{print $1}'`; do
+        pcount=0
+        for portname in `jexec $jid ls -1 /var/db/pkg/`; do
+            if [ -f ${tmp_path}/_${portname} ]; then
+                if [ `grep -c '0 problem(s) found.' ${tmp_path}/_${portname}` = 0 ]; then
+                    cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> $audit_path/$jid 2> /dev/null
+                    pcount=$((${pcount}+1))
+                fi
+            fi
+        done
+        echo "$pcount problem(s) found." >> $audit_path/$jid
+    done
+
+    cd $audit_path
+    /usr/sbin/jls | grep -v JID | awk '{print $1" "$3}' | xargs -n2 mv
+    rm -rf ${tmp_path}/*
+    exit
+fi
+
+if [ "X${action}" = "Xmail" ]; then
+    tmpfile=${tmp_path}/_audit-$mailaddr
+    rm -f $tmpfile
+    
+    if [ "X$jailnames" = "XALL" ]; then
+        jailnames=`ls -1 $audit_path`
+    fi
+    
+    pcount=0
+     
+    for jailname in $jailnames; do
+
+        if [ -f $audit_path/$jailname ]; then
+            if [ `grep -c '0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
+                tmpcount=`echo -n $audit|awk '{print $1}'`
+                pcount=`expr "$pcount" "+" "$tmpcount"`
+                echo "" >> $tmpfile
+                echo "portaudit for jail: $jailname" >> $tmpfile
+                echo >> $tmpfile
+                cat $audit_path/$jailname >> $tmpfile
+            fi
+        else
+            echo "" >> $tmpfile
+            echo "error: \"$jailname\" does not exist" >> $tmpfile
+        fi
+ 
+    done
+    
+    if [ -e ${tmpfile} ]; then
+        if [ "X${mailaddr}" = "X-" ]; then
+            echo "portaudit for jails on $hostname - $pcount problem(s) found."
+            cat $tmpfile
+        else
+            cat $tmpfile |mail -s "portaudit for jails on $hostname - $pcount problem(s) found." $mailaddr
+        fi
+        rm -f $tmpfile
+    fi
+fi
