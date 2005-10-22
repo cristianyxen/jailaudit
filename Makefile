@@ -29,10 +29,5 @@ IGNORE= The jls utility was added in FreeBSD 5.1.
 
 RUN_DEPENDS=    ${LOCALBASE}/sbin/portaudit:${PORTSDIR}/security/portaudit
 
-post-install:
-        @if [ ! -f ${PREFIX}/etc/jailaudit.conf ]; then \
-                ${CP} -p ${PREFIX}/etc/jailaudit.conf.sample ${PREFIX}/etc/jailaudit.conf ; \
-        fi
-
 .include <bsd.port.post.mk>
 
