@@ -93,7 +93,7 @@ if [ "X${action}" = "Xmail" ]; then
 
         if [ -f $audit_path/$jailname ]; then
             if [ `grep -c '0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
-                tmpcount=`echo -n $audit|awk '{print $1}'`
+		tmpcount=`grep "problem(s) found." ${audit_path}/${jailname}|awk '{print $1}'`
                 pcount=`expr "$pcount" "+" "$tmpcount"`
                 echo "" >> $tmpfile
                 echo "portaudit for jail: $jailname" >> $tmpfile
@@ -116,4 +116,7 @@ if [ "X${action}" = "Xmail" ]; then
         fi
         rm -f $tmpfile
     fi
+fi
+
+if [ "X${action}" = "Xmotd" ]; then
 fi
