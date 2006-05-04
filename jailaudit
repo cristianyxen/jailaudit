@@ -64,7 +64,7 @@ if [ "X${action}" = "Xgenerate" ]; then
         pcount=0
         for portname in `jexec $jid ls -1 /var/db/pkg/`; do
             if [ -f ${tmp_path}/_${portname} ]; then
-                if [ `grep -c '0 problem(s) found.' ${tmp_path}/_${portname}` = 0 ]; then
+                if [ `grep -c '^0 problem(s) found.' ${tmp_path}/_${portname}` = 0 ]; then
                     cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> $audit_path/$jid 2> /dev/null
                     pcount=$((${pcount}+1))
                 fi
@@ -92,7 +92,7 @@ if [ "X${action}" = "Xmail" ]; then
     for jailname in $jailnames; do
 
         if [ -f $audit_path/$jailname ]; then
-            if [ `grep -c '0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
+            if [ `grep -c '^0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
 		tmpcount=`grep "problem(s) found." ${audit_path}/${jailname}|awk '{print $1}'`
                 pcount=`expr "$pcount" "+" "$tmpcount"`
                 echo "" >> $tmpfile
