@@ -95,10 +95,14 @@ if [ "X${action}" = "Xmail" ]; then
             if [ `grep -c '^0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
 		tmpcount=`grep "problem(s) found." ${audit_path}/${jailname}|awk '{print $1}'`
                 pcount=`expr "$pcount" "+" "$tmpcount"`
+
+		jail_hostname=${jailname%%_*}
+		jid=${jailname##*_}
+
                 echo "" >> $tmpfile
-                echo "portaudit for jail: $jailname" >> $tmpfile
+                echo "portaudit for jail: $jail_hostname (JID: ${jid})" >> $tmpfile
                 echo >> $tmpfile
-                cat $audit_path/$jailname_* >> $tmpfile
+                cat ${audit_path}/${jailname} >> ${tmpfile}
             fi
         else
             echo "" >> $tmpfile
