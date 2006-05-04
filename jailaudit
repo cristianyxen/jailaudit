@@ -128,5 +128,3 @@ if [ "X${action}" = "Xmail" ]; then
     fi
 fi
 
-if [ "X${action}" = "Xmotd" ]; then
-fi
