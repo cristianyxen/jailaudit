@@ -82,11 +82,17 @@ fi
 if [ "X${action}" = "Xmail" ]; then
     tmpfile=${tmp_path}/_audit-$mailaddr
     rm -f $tmpfile
-    
+
     if [ "X$jailnames" = "XALL" ]; then
         jailnames=`ls -1 $audit_path`
+    else
+	for jailname in ${jailnames}; do
+		_new_jailname=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
+		_jailnames="${_jailnames} ${_new_jailname}"
+	done
+	jailnames=${_jailnames}
     fi
-    
+
     pcount=0
      
     for jailname in $jailnames; do
