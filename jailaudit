@@ -24,7 +24,7 @@ if [ "X${hostname}" = "X" ]; then
 fi
 
 action=$1
-mailaddr=$2
+mailaddrs=$2
 jailnames=$3
 
 if [ "X${action}" != "Xmail" ] && [ "X${action}" != "Xgenerate" ]; then
@@ -122,7 +122,9 @@ if [ "X${action}" = "Xmail" ]; then
             echo "portaudit for jails on $hostname - $pcount problem(s) found."
             cat $tmpfile
         else
-            cat $tmpfile |mail -s "portaudit for jails on $hostname - $pcount problem(s) found." $mailaddr
+            for mailaddr in ${mailaddrs}; do
+                cat $tmpfile |mail -s "portaudit for jails on $hostname - $pcount problem(s) found." $mailaddr
+            done
         fi
         rm -f $tmpfile
     fi
