@@ -45,24 +45,22 @@ if [ "X${action}" = "Xgenerate" ]; then
 
     # kludge for multi-ip jls in 8.0-CURRENT
     JLS() {
-    if [ `uname -r | grep '^8'` ]; then
-        /usr/sbin/jls | awk '
-        $1 == "JID" { next }
-        $1 == "IP" { next }
-        $1 ~ /[1-9][0-9]*/ && $3 ~ /^\// {
-            report = $1 " " $2 " " $3
-            next
-        }
-        {
-            sub(/^  */, "")
-            report = report " " $0
-            print report
-            next
-        }
-        '
-    else
-	   /usr/sbin/jls | grep -v JID
-    fi
+        /usr/sbin/jls | tail +3 | while read line ; do
+            set $line
+            if [ $# = 4 ] ; then
+                echo "jail $1 (name $3 root $4) IPs: $2"
+            elif [ $# = 3 ] ; then
+                _jls_jid=$1
+                _jls_hostname=$2
+                _jls_root=$3
+                injail=1
+            elif [ $# = 1 ] ; then
+                if [ ${injail} ]; then
+                    echo ${_jls_jid} $1 ${_jls_hostname} ${_jls_root}
+                    injail=''
+                fi
+            fi
+        done
     }
 
     echo
