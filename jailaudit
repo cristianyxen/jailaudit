@@ -100,6 +100,7 @@ if [ "X${action}" = "Xgenerate" ]; then
 fi
 
 if [ "X${action}" = "Xmail" ]; then
+    rc=0
     tmpfile=${tmp_path}/_audit-$mailaddr
     rm -f $tmpfile
 
@@ -138,6 +139,7 @@ if [ "X${action}" = "Xmail" ]; then
     done
     
     if [ -e ${tmpfile} ]; then
+        rc=1
         if [ "X${mailaddr}" = "X-" ]; then
             echo "portaudit for jails on $hostname - $pcount problem(s) found."
             cat $tmpfile
@@ -148,5 +150,6 @@ if [ "X${action}" = "Xmail" ]; then
         fi
         rm -f $tmpfile
     fi
+    exit $rc
 fi
 

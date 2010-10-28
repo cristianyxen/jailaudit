@@ -41,6 +41,7 @@ case "${daily_status_security_jailaudit_enable:-YES}" in
         *)
                 /usr/local/bin/jailaudit generate
                 /usr/local/bin/jailaudit mail - ALL
+                rc=$?
                 ;;
 esac
 
