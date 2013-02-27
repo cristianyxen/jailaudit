@@ -43,37 +43,38 @@ fi
 
 if [ "X${action}" = "Xgenerate" ]; then
 
-    # kludge for multi-ip jls in 8.0-CURRENT
     JLS() {
-        /usr/sbin/jls | tail +3 | while read line ; do
-            set $line
-            if [ $# = 4 ] ; then
-                echo "jail $1 (name $3 root $4) IPs: $2"
-            elif [ $# = 3 ] ; then
-                _jls_jid=$1
-                _jls_hostname=$2
-                _jls_root=$3
-                injail=1
-            elif [ $# = 1 ] ; then
-                if [ ${injail} ]; then
-                    echo ${_jls_jid} $1 ${_jls_hostname} ${_jls_root}
-                    injail=''
-                fi
-            fi
-        done
+        /usr/sbin/jls | grep -v JID
     }
 
     echo
     echo "Downloading a current audit database:"
     /usr/local/sbin/portaudit -Fd
+
+    # use pkgng if it is available in the hostsystem    
+    if [ `which pkg` -o -x '/usr/local/sbin/pkg' ]; then
+     pkgng_bin=`which pkg`
+     [ "${pkgng_bin}" ] || pkgng_bin='/usr/local/sbin/pkg'
+     pkgng_support=1
+     echo "pkgng support enabled, using ${pkgng_bin} version `${pkgng_bin} -v`."
+     PORTLIST_CMD () {
+      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$'
+      ${pkgng_bin} -j ${jid} query -a '%n-%v'
+     }
+    else
+     PORTLIST_CMD () {
+      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$'
+     }
+    fi
+
     echo
 
     rm -rf ${tmp_path}/*
     rm -rf ${audit_path}/*
     rm -f ${tmp_path}/_jailaudit_allports
 
-    for jpath in `JLS|awk '{print $4}'`; do
-        ls -1 $jpath/var/db/pkg/ >> ${tmp_path}/_jailaudit_allports 2> /dev/null
+    for jid in `JLS|awk '{print $1}'`; do
+        PORTLIST_CMD >> ${tmp_path}/_jailaudit_allports 2> /dev/null
     done
 
     for portname in `cat ${tmp_path}/_jailaudit_allports|sort|uniq`; do
@@ -82,7 +83,7 @@ if [ "X${action}" = "Xgenerate" ]; then
 
     for jid in `JLS|awk '{print $1}'`; do
         pcount=0
-        for portname in `jexec $jid ls -1 /var/db/pkg/`; do
+        for portname in `PORTLIST_CMD`; do
             if [ -f ${tmp_path}/_${portname} ]; then
                 if [ `grep -c '^0 problem(s) found.' ${tmp_path}/_${portname}` = 0 ]; then
                     cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> $audit_path/$jid 2> /dev/null
