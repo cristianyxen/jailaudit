@@ -141,7 +141,7 @@ if [ "X${action}" = "Xmail" ]; then
     
     if [ -e ${tmpfile} ]; then
         rc=1
-        if [ "X${mailaddr}" = "X-" ]; then
+        if [ "X${mailaddrs}" = "X-" ]; then
             echo "portaudit for jails on $hostname - $pcount problem(s) found."
             cat $tmpfile
         else
