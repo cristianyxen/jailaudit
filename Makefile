@@ -1,33 +1,28 @@
 # New ports collection makefile for:	jailaudit
-# Date created:		21 October 2005
-# Whom:			cryx
+# Date created:				21 October 2005
+# Whom:					cryx
+#
+# $FreeBSD: ports/ports-mgmt/jailaudit/Makefile,v 1.6 2012/11/17 06:00:45 svnexp Exp $
 #
 
 PORTNAME=	jailaudit
 PORTVERSION=	1.2
-CATEGORIES=	security
+CATEGORIES=	ports-mgmt
 MASTER_SITES=	http://outpost.h3q.com/software/jailaudit/
 
 MAINTAINER=	cryx-ports@h3q.com
-COMMENT=	Script to generate portaudit reports for jails. 
+COMMENT=	Script to generate portaudit reports for jails
+
+RUN_DEPENDS=	${LOCALBASE}/sbin/portaudit:${PORTSDIR}/ports-mgmt/portaudit
 
 USE_BZIP2=	yes
 
 PERIODICDIR?=	${PREFIX}/etc/periodic
 REPORTDIR?=	${PREFIX}/jailaudit/reports
-TMPDIR?=	${PREFIX}/jailaudit/tmp
+XTMPDIR?=	${PREFIX}/jailaudit/tmp
 
 PLIST_SUB+=	PERIODICDIR="${PERIODICDIR:S,^${PREFIX}/,,}" \
-		REPORTDIR="${REPORTDIR}" \
-		TMPDIR="${TMPDIR}"
+		REPORTDIR="${REPORTDIR:S,^${PREFIX}/,,}" \
+		XTMPDIR="${XTMPDIR:S,^${PREFIX}/,,}"
 
-.include <bsd.port.pre.mk>
-
-.if ( ${OSVERSION} < 501000 )
-IGNORE= The jls utility was added in FreeBSD 5.1.
-.endif
-
-RUN_DEPENDS=	${LOCALBASE}/sbin/portaudit:${PORTSDIR}/security/portaudit
-
-.include <bsd.port.post.mk>
-
+.include <bsd.port.mk>
