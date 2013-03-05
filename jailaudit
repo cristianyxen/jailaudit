@@ -52,8 +52,8 @@ if [ "X${action}" = "Xgenerate" ]; then
     /usr/local/sbin/portaudit -Fd
 
     # use pkgng if it is available in the hostsystem    
-    if [ `which pkg` -o -x '/usr/local/sbin/pkg' ]; then
-     pkgng_bin=`which pkg`
+    pkgng_bin=`which pkg`
+    if [ "${pkgng_bin}" -o -x '/usr/local/sbin/pkg' ]; then
      [ "${pkgng_bin}" ] || pkgng_bin='/usr/local/sbin/pkg'
      pkgng_support=1
      echo "pkgng support enabled, using ${pkgng_bin} version `${pkgng_bin} -v`."
@@ -141,7 +141,7 @@ if [ "X${action}" = "Xmail" ]; then
     
     if [ -e ${tmpfile} ]; then
         rc=1
-        if [ "X${mailaddr}" = "X-" ]; then
+        if [ "X${mailaddrs}" = "X-" ]; then
             echo "portaudit for jails on $hostname - $pcount problem(s) found."
             cat $tmpfile
         else
