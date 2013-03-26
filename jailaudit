@@ -27,22 +27,14 @@ action=$1
 mailaddrs=$2
 jailnames=$3
 
-if [ "X${action}" != "Xmail" ] && [ "X${action}" != "Xgenerate" ]; then
+PRINT_USAGE () {
     echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
     echo "        mailaddr can be \"-\" for stdout"
     echo "        jailnames can be \"ALL\" for all audits or a list of jail-hostnames"
-    exit
-fi
+}
 
-if [ "X${action}" != "Xgenerate" ] && [ ! "$jailnames" ]; then
-    echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
-    echo "        mailaddr can be \"-\" for stdout"
-    echo "        jailnames can be \"ALL\" for all audits or a list of jail-hostnames"
-    exit
-fi
-
-if [ "X${action}" = "Xgenerate" ]; then
-
+case ${action} in
+ generate)
     JLS() {
         /usr/sbin/jls | grep -v JID
     }
@@ -51,19 +43,17 @@ if [ "X${action}" = "Xgenerate" ]; then
     echo "Downloading a current audit database:"
     /usr/local/sbin/portaudit -Fd
 
-    # use pkgng if it is available in the hostsystem    
-    pkgng_bin=`which pkg`
-    if [ "${pkgng_bin}" -o -x '/usr/local/sbin/pkg' ]; then
-     [ "${pkgng_bin}" ] || pkgng_bin='/usr/local/sbin/pkg'
-     pkgng_support=1
+    # use pkgng if it is available in the hostsystem
+    pkgng_bin='/usr/local/sbin/pkg'
+    if [ -x "${pkgng_bin}" ]; then
      echo "pkgng support enabled, using ${pkgng_bin} version `${pkgng_bin} -v`."
      PORTLIST_CMD () {
-      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$'
+      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'
       ${pkgng_bin} -j ${jid} query -a '%n-%v'
      }
     else
      PORTLIST_CMD () {
-      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$'
+      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'
      }
     fi
 
@@ -98,9 +88,11 @@ if [ "X${action}" = "Xgenerate" ]; then
     JLS | awk '{print $1" "$3"_"$1}' | xargs -n2 mv
     rm -rf ${tmp_path}/*
     exit
-fi
+ ;;
+ mail)
+    # bail out if no jailnames and mailaddrs are given
+    [ -z "$jailnames" -o -z "$mailaddrs" ] && PRINT_USAGE && exit 1
 
-if [ "X${action}" = "Xmail" ]; then
     rc=0
     tmpfile=${tmp_path}/_audit-$mailaddr
     rm -f $tmpfile
@@ -152,5 +144,9 @@ if [ "X${action}" = "Xmail" ]; then
         rm -f $tmpfile
     fi
     exit $rc
-fi
+ ;;
+ *)
+  PRINT_USAGE && exit 1
+ ;;
+esac
 
