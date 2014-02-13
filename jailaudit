@@ -2,23 +2,8 @@
 # copyright Philipp Wuensche
 # License: beer ware (http://en.wikipedia.org/wiki/Beerware)
 
-if [ -x /usr/local/sbin/portaudit ]; then
-    command_name=portaudit
-    audit_command=/usr/local/sbin/portaudit
-    command_path=/usr/local/sbin/portaudit
-    vulnerability_regex='^0 problem(s) found.'
-elif [ -x /usr/sbin/pkg ]; then
-    command_name=pkg
-    audit_command='/usr/sbin/pkg audit'
-    command_path=/usr/sbin/pkg
-    vulnerability_regex='is vulnerable'
-elif [ -x /usr/local/sbin/pkg ]; then
-    command_name=pkg
-    audit_command='/usr/local/sbin/pkg audit'
-    command_path=/usr/local/sbin/pkg
-    vulnerability_regex='is vulnerable'
-else
-    echo "Error: `basename $0 ` depends on portaudit and/or pkg"
+if [ ! -f /usr/local/sbin/portaudit ]; then
+    echo "Error: `basename $0 ` depends on portaudit"
     exit
 fi
 
@@ -53,45 +38,44 @@ case ${action} in
     JLS() {
         /usr/sbin/jls | grep -v JID
     }
-    
+
+    echo
+    echo "Downloading a current audit database:"
+    /usr/local/sbin/portaudit -Fd
+
+    # use pkgng if it is available in the hostsystem
+    pkgng_bin='/usr/local/sbin/pkg'
+    if [ -x "${pkgng_bin}" ]; then
+     echo "pkgng support enabled, using ${pkgng_bin} version `${pkgng_bin} -v`."
+     PORTLIST_CMD () {
+      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'
+      ${pkgng_bin} -j ${jid} query -a '%n-%v'
+     }
+    else
+     PORTLIST_CMD () {
+      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'
+     }
+    fi
+
+    echo
+
     rm -rf ${tmp_path}/*
     rm -rf ${audit_path}/*
     rm -f ${tmp_path}/_jailaudit_allports
-    
-    echo
-    echo "Downloading a current audit database:"
 
-    case ${command_name} in
-    portaudit)
-        `${command_path} -Fd`
-
-        PORTLIST_CMD () {
-            jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'
-        }
-    ;;
-    pkg)
-        `${audit_command} -F`
-        echo "pkgng support enabled, using ${command_path}  version `${command_path} -v`."
-        PORTLIST_CMD () {
-            ${command_path} -j ${jid} query -a '%n-%v'
-        }
-    ;;
-    esac
-    
     for jid in `JLS|awk '{print $1}'`; do
         PORTLIST_CMD >> ${tmp_path}/_jailaudit_allports 2> /dev/null
     done
 
     for portname in `cat ${tmp_path}/_jailaudit_allports|sort|uniq`; do
-        ${audit_command} $portname > ${tmp_path}/_$portname 2> /dev/null
+        /usr/local/sbin/portaudit $portname > ${tmp_path}/_$portname 2> /dev/null
     done
 
     for jid in `JLS|awk '{print $1}'`; do
         pcount=0
         for portname in `PORTLIST_CMD`; do
-            if [ -s ${tmp_path}/_${portname} ]; then
-                if [ `grep -c '${vulnerability_regex}' ${tmp_path}/_${portname}` = 0 ]; then
-                    cat ${tmp_path}/_${portname}
+            if [ -f ${tmp_path}/_${portname} ]; then
+                if [ `grep -c '^0 problem(s) found.' ${tmp_path}/_${portname}` = 0 ]; then
                     cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> $audit_path/$jid 2> /dev/null
                     pcount=$((${pcount}+1))
                 fi
@@ -99,7 +83,7 @@ case ${action} in
         done
         echo "$pcount problem(s) found." >> $audit_path/$jid
     done
-exit
+
     cd $audit_path
     JLS | awk '{print $1" "$3"_"$1}' | xargs -n2 mv
     rm -rf ${tmp_path}/*
@@ -129,11 +113,11 @@ exit
 
         if [ -f $audit_path/$jailname ]; then
             if [ `grep -c '^0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
-                tmpcount=`grep "problem(s) found." ${audit_path}/${jailname}|awk '{print $1}'`
+		tmpcount=`grep "problem(s) found." ${audit_path}/${jailname}|awk '{print $1}'`
                 pcount=`expr "$pcount" "+" "$tmpcount"`
 
-                jail_hostname=${jailname%%_*}
-                jid=${jailname##*_}
+		jail_hostname=${jailname%%_*}
+		jid=${jailname##*_}
 
                 echo "" >> $tmpfile
                 echo "portaudit for jail: $jail_hostname (JID: ${jid})" >> $tmpfile
