@@ -3,7 +3,7 @@
 # License: beer ware (http://en.wikipedia.org/wiki/Beerware)
 pkgng_bin='/usr/local/sbin/pkg'
 
-if [ ! -f /usr/local/sbin/portaudit ] && [ ! -x "${pkgng_bin}" ]; then
+if [ ! -x /usr/local/sbin/portaudit ] && [ ! -x "${pkgng_bin}" ]; then
     echo "Error: `basename $0 ` depends on portaudit or pkg-1.0.0"
     exit
 fi
