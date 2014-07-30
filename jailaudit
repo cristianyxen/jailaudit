@@ -52,7 +52,7 @@ case ${action} in
       ${pkgng_bin} -j ${jid} query -a '%n-%v'
      }
      AUDIT_PORT() {
-        $pkgng_bin audit $1 > $2 2> /dev/null
+        $pkgng_bin audit $1 | grep -vE '^[0-9]+ problem\(s\)' > $2 2> /dev/null
      }
      PORT_VULNERABLE() {
         if [ -f $1 ] && [ -s $1 ]; then return 0; else return 1; fi
