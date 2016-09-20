@@ -37,7 +37,7 @@ PRINT_USAGE () {
 case ${action} in
  generate)
     JLS() {
-        /usr/sbin/jls | grep -v JID
+        /usr/sbin/jls | grep -v JID | grep -v '/var/empty$'
     }
 
     echo
