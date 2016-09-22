@@ -40,6 +40,9 @@ case ${action} in
         /usr/sbin/jls | grep -v JID | grep -v '/var/empty$'
     }
 
+    # exit if no jails are running that we can process
+    [ `JLS |wc -l` -gt 0 ] || exit 0
+
     echo
     echo "Downloading a current audit database:"
 
