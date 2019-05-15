@@ -3,8 +3,8 @@
 # License: beer ware (http://en.wikipedia.org/wiki/Beerware)
 pkgng_bin='/usr/local/sbin/pkg'
 
-if [ ! -x /usr/local/sbin/portaudit ] && [ ! -x "${pkgng_bin}" ]; then
-    echo "Error: `basename $0 ` depends on portaudit or pkg-1.0.0"
+if [ ! -x "${pkgng_bin}" ]; then
+    echo "Error: `basename $0 ` depends on ports-mgmt/pkg installed"
     exit
 fi
 
@@ -47,31 +47,17 @@ case ${action} in
     echo "Downloading a current audit database:"
 
     # use pkgng if it is available in the hostsystem
-    if [ -x "${pkgng_bin}" ]; then
-     echo "pkgng support enabled, using ${pkgng_bin} version `${pkgng_bin} -v`."
-     $pkgng_bin audit -F > /dev/null
-     PORTLIST_CMD () {
-      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'|grep -v 'vuln.xml'
-      ${pkgng_bin} -j ${jid} query -a '%n-%v'
-     }
-     AUDIT_PORT() {
-        $pkgng_bin audit $1 | grep -vE '^[0-9]+ problem\(s\)' > $2 2> /dev/null
-     }
-     PORT_VULNERABLE() {
-        if [ -f $1 ] && [ -s $1 ]; then return 0; else return 1; fi
-     }
-    else
-     /usr/local/sbin/portaudit -Fd
-     PORTLIST_CMD () {
-      jexec ${jid} ls -1 /var/db/pkg/ |grep -v '.sqlite$' |grep -v 'auditfile'
-     }
-     AUDIT_PORT() {
-        /usr/local/sbin/portaudit $1 > $2 2> /dev/null
-     }
-     PORT_VULNERABLE() {
-        if [ -f $1 ] && [ `grep -c '^0 problem(s) found.' $1` = 0 ]; then return 0; else return 1; fi
-     }
-    fi
+	echo "using ${pkgng_bin} version `${pkgng_bin} -v`."
+	$pkgng_bin audit -F > /dev/null
+	PORTLIST_CMD () {
+	 ${pkgng_bin} -j ${jid} query -a '%n-%v'
+	}
+	AUDIT_PORT() {
+		$pkgng_bin audit $1 | grep -vE '^[0-9]+ problem\(s\)' > $2 2> /dev/null
+	}
+	PORT_VULNERABLE() {
+		if [ -f $1 ] && [ -s $1 ]; then return 0; else return 1; fi
+	}
 
     echo
 
