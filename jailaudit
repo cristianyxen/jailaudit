@@ -29,7 +29,7 @@ mailaddrs=$2
 jailnames=$3
 
 PRINT_USAGE () {
-    echo "Usage: `basename $0` <generate|mail> mailaddr \"jailnames\""
+    echo "Usage: `basename $0` <generate|list|mail> mailaddr \"jailnames\""
     echo "        mailaddr can be \"-\" for stdout"
     echo "        jailnames can be \"ALL\" for all audits or a list of jail-hostnames"
 }
@@ -88,6 +88,37 @@ case ${action} in
     JLS | awk '{print $1" "$3"_"$1}' | xargs -n2 mv
     rm -rf ${tmp_path}/*
     exit
+ ;;
+ list)
+	# this mode lists all installed packages with and advisory together with the jailname and JID they are installed in
+
+	# bail out if no jailnames and mailaddrs are given
+	[ -z "$jailnames" -o -z "$mailaddrs" ] && PRINT_USAGE && exit 1
+
+	if [ "X$jailnames" = "XALL" ]; then
+		jailnames=`ls -1 $audit_path`
+	else
+		for jailname in ${jailnames}; do
+			_new_jailname=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
+			_jailnames="${_jailnames} ${_new_jailname}"
+		done
+		jailnames=${_jailnames}
+	fi
+
+	for jailname in $jailnames; do
+
+		if [ -f $audit_path/$jailname ]; then
+
+			jail_hostname=${jailname%%_*}
+			jid=${jailname##*_}
+
+			for _port in `grep -E 'is vulnerable:$' $audit_path/$jailname | cut -d ' ' -f1|sort | uniq`; do
+				echo "${jail_hostname} ${jid} ${_port}"
+			done
+		fi
+
+	done
+
  ;;
  mail)
     # bail out if no jailnames and mailaddrs are given
