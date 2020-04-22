@@ -96,23 +96,22 @@ case ${action} in
 	[ -z "$jailnames" -o -z "$mailaddrs" ] && PRINT_USAGE && exit 1
 
 	if [ "X$jailnames" = "XALL" ]; then
-		jailnames=`ls -1 $audit_path`
+		reports=`ls -1 $audit_path`
 	else
 		for jailname in ${jailnames}; do
-			_new_jailname=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
-			_jailnames="${_jailnames} ${_new_jailname}"
+			_report=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
+			reports="${reports} ${_report}"
 		done
-		jailnames=${_jailnames}
 	fi
 
-	for jailname in $jailnames; do
+	for report in ${reports}; do
 
-		if [ -f $audit_path/$jailname ]; then
+		if [ -f $audit_path/$report ]; then
 
-			jail_hostname=${jailname%%_*}
-			jid=${jailname##*_}
+			jail_hostname=${report%%_*}
+			jid=${report##*_}
 
-			for _port in `grep -E 'is vulnerable:$' $audit_path/$jailname | cut -d ' ' -f1|sort | uniq`; do
+			for _port in `grep -E 'is vulnerable:$' $audit_path/$report | cut -d ' ' -f1|sort | uniq`; do
 				echo "${jail_hostname} ${jid} ${_port}"
 			done
 		fi
@@ -129,35 +128,34 @@ case ${action} in
     rm -f $tmpfile
 
     if [ "X$jailnames" = "XALL" ]; then
-        jailnames=`ls -1 $audit_path`
+        reports=`ls -1 $audit_path`
     else
 	for jailname in ${jailnames}; do
-		_new_jailname=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
-		_jailnames="${_jailnames} ${_new_jailname}"
+		_report=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
+		reports="${reports} ${_report}"
 	done
-	jailnames=${_jailnames}
     fi
 
     pcount=0
 
-    for jailname in $jailnames; do
+    for report in ${reports}; do
 
-        if [ -f $audit_path/$jailname ]; then
-            if [ `grep -c '^0 problem(s) found.' ${audit_path}/${jailname}` = 0 ]; then
-		tmpcount=`grep "problem(s) found." ${audit_path}/${jailname}|awk '{print $1}'`
+        if [ -f $audit_path/$report ]; then
+            if [ `grep -c '^0 problem(s) found.' ${audit_path}/${report}` = 0 ]; then
+		tmpcount=`grep "problem(s) found." ${audit_path}/${report}|awk '{print $1}'`
                 pcount=`expr "$pcount" "+" "$tmpcount"`
 
-		jail_hostname=${jailname%%_*}
-		jid=${jailname##*_}
+		jail_hostname=${report%%_*}
+		jid=${report##*_}
 
                 echo "" >> $tmpfile
                 echo "portaudit for jail: $jail_hostname (JID: ${jid})" >> $tmpfile
                 echo >> $tmpfile
-                cat ${audit_path}/${jailname} >> ${tmpfile}
+                cat ${audit_path}/${report} >> ${tmpfile}
             fi
         else
             echo "" >> $tmpfile
-            echo "error: \"$jailname\" does not exist" >> $tmpfile
+            echo "error: \"$report\" does not exist" >> $tmpfile
         fi
 
     done
