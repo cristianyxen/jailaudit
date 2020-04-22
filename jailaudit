@@ -48,12 +48,12 @@ case ${action} in
 
     # use pkgng if it is available in the hostsystem
 	echo "using ${pkgng_bin} version `${pkgng_bin} -v`."
-	$pkgng_bin audit -F > /dev/null
+	${pkgng_bin} audit -F > /dev/null
 	PORTLIST_CMD () {
 	 ${pkgng_bin} -j ${jid} query -a '%n-%v'
 	}
 	AUDIT_PORT() {
-		$pkgng_bin audit $1 | grep -vE '^[0-9]+ problem\(s\)' > $2 2> /dev/null
+		${pkgng_bin} audit $1 | grep -vE '^[0-9]+ problem\(s\)' > $2 2> /dev/null
 	}
 	PORT_VULNERABLE() {
 		if [ -f $1 ] && [ -s $1 ]; then return 0; else return 1; fi
@@ -77,14 +77,14 @@ case ${action} in
         pcount=0
         for portname in `PORTLIST_CMD`; do
             if PORT_VULNERABLE ${tmp_path}/_${portname}; then
-                cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> $audit_path/$jid 2> /dev/null
+                cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> ${audit_path}/${jid} 2> /dev/null
                 pcount=$((${pcount}+1))
             fi
         done
-        echo "$pcount problem(s) found." >> $audit_path/$jid
+        echo "${pcount} problem(s) found." >> ${audit_path}/${jid}
     done
 
-    cd $audit_path
+    cd ${audit_path}
     JLS | awk '{print $1" "$3"_"$1}' | xargs -n2 mv
     rm -rf ${tmp_path}/*
     exit
@@ -93,10 +93,10 @@ case ${action} in
 	# this mode lists all installed packages with and advisory together with the jailname and JID they are installed in
 
 	# bail out if no jailnames and mailaddrs are given
-	[ -z "$jailnames" -o -z "$mailaddrs" ] && PRINT_USAGE && exit 1
+	[ -z "${jailnames}" -o -z "${mailaddrs}" ] && PRINT_USAGE && exit 1
 
-	if [ "X$jailnames" = "XALL" ]; then
-		reports=`ls -1 $audit_path`
+	if [ "X${jailnames}" = "XALL" ]; then
+		reports=`ls -1 ${audit_path}`
 	else
 		for jailname in ${jailnames}; do
 			_report=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
@@ -106,13 +106,13 @@ case ${action} in
 
 	for report in ${reports}; do
 
-		if [ -f $audit_path/$report ]; then
+		if [ -f ${audit_path}/${report} ]; then
 
-			jail_hostname=${report%%_*}
+			jailname=${report%%_*}
 			jid=${report##*_}
 
-			for _port in `grep -E 'is vulnerable:$' $audit_path/$report | cut -d ' ' -f1|sort | uniq`; do
-				echo "${jail_hostname} ${jid} ${_port}"
+			for _port in `grep -E 'is vulnerable:$' ${audit_path}/${report} | cut -d ' ' -f1|sort | uniq`; do
+				echo "${jailname} ${jid} ${_port}"
 			done
 		fi
 
@@ -121,14 +121,14 @@ case ${action} in
  ;;
  mail)
     # bail out if no jailnames and mailaddrs are given
-    [ -z "$jailnames" -o -z "$mailaddrs" ] && PRINT_USAGE && exit 1
+    [ -z "${jailnames}" -o -z "${mailaddrs}" ] && PRINT_USAGE && exit 1
 
     rc=0
-    tmpfile=${tmp_path}/_audit-$mailaddr
-    rm -f $tmpfile
+    tmpfile=${tmp_path}/_audit-${mailaddr}
+    rm -f ${tmpfile}
 
-    if [ "X$jailnames" = "XALL" ]; then
-        reports=`ls -1 $audit_path`
+    if [ "X${jailnames}" = "XALL" ]; then
+        reports=`ls -1 ${audit_path}`
     else
 	for jailname in ${jailnames}; do
 		_report=`ls -d1 ${audit_path}/${jailname}_*|sed s:${audit_path}/::g`
@@ -140,22 +140,22 @@ case ${action} in
 
     for report in ${reports}; do
 
-        if [ -f $audit_path/$report ]; then
+        if [ -f ${audit_path}/${report} ]; then
             if [ `grep -c '^0 problem(s) found.' ${audit_path}/${report}` = 0 ]; then
 		tmpcount=`grep "problem(s) found." ${audit_path}/${report}|awk '{print $1}'`
-                pcount=`expr "$pcount" "+" "$tmpcount"`
+                pcount=`expr "${pcount}" "+" "${tmpcount}"`
 
-		jail_hostname=${report%%_*}
+		jailname=${report%%_*}
 		jid=${report##*_}
 
-                echo "" >> $tmpfile
-                echo "portaudit for jail: $jail_hostname (JID: ${jid})" >> $tmpfile
-                echo >> $tmpfile
+                echo "" >> ${tmpfile}
+                echo "portaudit for jail: ${jailname} (JID: ${jid})" >> ${tmpfile}
+                echo >> ${tmpfile}
                 cat ${audit_path}/${report} >> ${tmpfile}
             fi
         else
-            echo "" >> $tmpfile
-            echo "error: \"$report\" does not exist" >> $tmpfile
+            echo "" >> ${tmpfile}
+            echo "error: \"${report}\" does not exist" >> ${tmpfile}
         fi
 
     done
@@ -163,16 +163,16 @@ case ${action} in
     if [ -e ${tmpfile} ]; then
         rc=1
         if [ "X${mailaddrs}" = "X-" ]; then
-            echo "portaudit for jails on $hostname - $pcount problem(s) found."
-            cat $tmpfile
+            echo "portaudit for jails on ${hostname} - ${pcount} problem(s) found."
+            cat ${tmpfile}
         else
             for mailaddr in ${mailaddrs}; do
-                cat $tmpfile |mail -s "portaudit for jails on $hostname - $pcount problem(s) found." $mailaddr
+                cat ${tmpfile} |mail -s "portaudit for jails on ${hostname} - ${pcount} problem(s) found." ${mailaddr}
             done
         fi
-        rm -f $tmpfile
+        rm -f ${tmpfile}
     fi
-    exit $rc
+    exit ${rc}
  ;;
  *)
   PRINT_USAGE && exit 1
