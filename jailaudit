@@ -77,7 +77,7 @@ case ${action} in
         pcount=0
         for portname in `PORTLIST_CMD`; do
             if PORT_VULNERABLE ${tmp_path}/_${portname}; then
-                cat ${tmp_path}/_${portname}|grep -v "problem(s) found." >> ${audit_path}/${jid} 2> /dev/null
+                grep -v "problem(s) found." ${tmp_path}/_${portname} >> ${audit_path}/${jid} 2> /dev/null
                 pcount=$((${pcount}+1))
             fi
         done
