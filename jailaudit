@@ -53,17 +53,15 @@ case ${action} in
     # use pkgng if it is available in the hostsystem
 	echo "using ${pkgng_bin} version `${pkgng_bin} -v`."
 	${pkgng_bin} audit -F > /dev/null
+	echo "done."
 	PORTLIST_CMD () {
-	 ${pkgng_bin} -j ${jid} query -a '%n-%v'
-	}
-	GET_PKG_ORIGIN () { # $portname $jid origin
-		local _port=$1
-		local _jid=$2
-		local _origin=`${pkgng_bin} -j ${_jid} query '%o' ${_port}`
-		eval $3\=${_origin}
+	 ${pkgng_bin} -j ${jid} query -a '%n-%v|%o'
 	}
 	AUDIT_PORT() {
 		${pkgng_bin} audit $1 | grep -vE '^[0-9]+ problem\(s\)' |grep -v 'is vulnerable:' > $2 2> /dev/null
+	}
+	CHECK_MOVED() {
+		grep "^$1|" "${tmp_moved}" |cut -d '|' -f 4 >> $2 2> /dev/null
 	}
 	PORT_VULNERABLE() {
 		if [ -f $1 ] && [ -s $1 ]; then return 0; else return 1; fi
@@ -75,21 +73,29 @@ case ${action} in
     rm -rf ${audit_path}/*
     rm -f ${tmp_path}/_jailaudit_allports
 
+    if [ ! -z "${${moved_file_path}}" ]; then
+      echo "Fetching ports MOVED file from: ${moved_file_path}"
+      tmp_moved=$(mktemp ${tmp_path}/jailaudit-MOVED.XXXX)
+      chown nobody "${tmp_moved}"
+      su -m nobody -c /usr/bin/fetch -q -o "${tmp_moved}" "${moved_file_path}"
+      echo
+    fi
+
     for jid in `JLS|awk '{print $1}'`; do
         PORTLIST_CMD >> ${tmp_path}/_jailaudit_allports 2> /dev/null
     done
 
     for portname in `cat ${tmp_path}/_jailaudit_allports|sort|uniq`; do
-        AUDIT_PORT $portname ${tmp_path}/_$portname
+        AUDIT_PORT ${portname%|*} ${tmp_path}/_${portname%|*}
+        CHECK_MOVED ${portname#*|} ${tmp_path}/_${portname%|*}
     done
 
     for jid in `JLS|awk '{print $1}'`; do
         pcount=0
         for portname in `PORTLIST_CMD`; do
-            if PORT_VULNERABLE ${tmp_path}/_${portname}; then
-	            GET_PKG_ORIGIN ${portname} ${jid} origin
-	            echo "${portname} (${origin}) is vulnerable:" >> ${audit_path}/${jid}
-                grep -v "problem(s) found." ${tmp_path}/_${portname} >> ${audit_path}/${jid} 2> /dev/null
+            if PORT_VULNERABLE ${tmp_path}/_${portname%|*}; then
+	            echo "${portname%|*} (${portname#*|}) is affected:" >> ${audit_path}/${jid}
+                grep -v "problem(s) found." ${tmp_path}/_${portname%|*} >> ${audit_path}/${jid} 2> /dev/null
                 pcount=$((${pcount}+1))
             fi
         done
@@ -140,7 +146,7 @@ case ${action} in
 			jailname=${report%%_*}
 			jid=${report##*_}
 
-			for _port in `grep -E 'is vulnerable:$' ${audit_path}/${report} | awk -F'[ ()]' '{print $1"#"$3}' |sort | uniq`; do
+			for _port in `grep -E 'is affected:$' ${audit_path}/${report} | awk -F'[ ()]' '{print $1"#"$3}' |sort | uniq`; do
 				portname=${_port%\#*}
 				category=${_port#*\#}
 				PRINTLINE `echo ${format} |sed 's:\,: :g'` || PRINT_USAGE 1

@@ -9,3 +9,13 @@ audit_path=/usr/local/jailaudit/reports
 # path for temprary files
 tmp_path=/usr/local/jailaudit/tmp
 
+# source of ports/MOVED file, can be anything fetch supports.
+# if empty, it will not be checked
+moved_file_path=''
+# Examples:
+# from your already existing ports:
+# moved_file_path='file://usr/ports/MOVED'
+# from freebsd github repo:
+# moved_file_path='https://raw.githubusercontent.com/freebsd/freebsd-ports/main/MOVED'
+# from freebsd cgit:
+# moved_file_path='https://cgit.freebsd.org/ports/plain/MOVED'
