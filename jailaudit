@@ -61,6 +61,7 @@ case ${action} in
 		${pkgng_bin} audit $1 | grep -vE '^[0-9]+ problem\(s\)' |grep -v 'is vulnerable:' > $2 2> /dev/null
 	}
 	CHECK_MOVED() {
+		[ -z "${moved_file_path}" ] && return
 		grep "^$1|" "${tmp_moved}" |cut -d '|' -f 4 >> $2 2> /dev/null
 	}
 	PORT_VULNERABLE() {
@@ -73,11 +74,11 @@ case ${action} in
     rm -rf ${audit_path}/*
     rm -f ${tmp_path}/_jailaudit_allports
 
-    if [ ! -z "${${moved_file_path}}" ]; then
+    if [ ! -z "${moved_file_path}" ]; then
       echo "Fetching ports MOVED file from: ${moved_file_path}"
-      tmp_moved=$(mktemp ${tmp_path}/jailaudit-MOVED.XXXX)
+      tmp_moved=`mktemp ${tmp_path}/jailaudit-MOVED.XXXX`
       chown nobody "${tmp_moved}"
-      su -m nobody -c /usr/bin/fetch -q -o "${tmp_moved}" "${moved_file_path}"
+      su -m nobody -c "/usr/bin/fetch -q -o ${tmp_moved} ${moved_file_path}"
       echo
     fi
 
