@@ -14,7 +14,7 @@ tmp_path=/usr/local/jailaudit/tmp
 moved_file_path=''
 # Examples:
 # from your already existing ports:
-# moved_file_path='file://usr/ports/MOVED'
+# moved_file_path='file:///usr/ports/MOVED'
 # from freebsd github repo:
 # moved_file_path='https://raw.githubusercontent.com/freebsd/freebsd-ports/main/MOVED'
 # from freebsd cgit:
